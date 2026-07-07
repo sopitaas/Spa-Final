@@ -11,6 +11,23 @@
 
         <div class="cita-formulario">
             <h2>SEPARA TU CITA</h2>
+            @if (TempData["MensajeExito"] != null)
+            {
+                <div style="
+                    background-color: #e8f5e9;
+                    color: #1b5e20;
+                    border: 1px solid #81c784;
+                    padding: 12px;
+                    margin-bottom: 18px;
+                    border-radius: 8px;
+                    text-align: center;
+                    font-weight: bold;"
+                    role="alert">
+
+                    @TempData["MensajeExito"]
+                </div>
+            }
+
 
             <form asp-action="Crear"
                   method="post"
@@ -19,7 +36,27 @@
                 <!-- Campo DNI solo en su propia fila -->
                 <div class="form-group">
                     <label for="dni">DNI</label>
-                    <input type="text" id="dni" name="dni" maxlength="8" pattern="\d{8}" required>
+
+                    <input type="text"
+                    id="dni"
+                    name="dni"
+                    maxlength="8"
+                    minlength="8"
+                    inputmode="numeric"
+                    pattern="[0-9]{8}"
+                    title="El DNI debe contener exactamente 8 números."
+                    autocomplete="off"
+                    required>
+
+                    <small id="errorDni"
+                    style="color: #b00020; display: block; margin-top: 4px;">
+                    </small>
+
+                    @Html.ValidationMessage(
+                    "dni",
+                    "",
+                    new { style = "color: #b00020; display: block; margin-top: 4px;" }
+                    )
                 </div>
 
                 <!-- Nombre y Apellido en una misma fila -->
@@ -38,12 +75,28 @@
                 <div class="form-group">
                     <label for="fecha">Fecha</label>
                     <input type="date" id="fecha" name="fecha" required>
+                    @Html.ValidationMessage(
+                        "fecha",
+                        "",
+                        new
+                        {
+                            style = "color: #b00020; display: block; margin-top: 4px;"
+                        }
+                    )
                 </div>
 
                 <div class="form-group">
                     <label for="hora">Hora</label>
                     <input type="time" id="hora" name="hora" min="10:00" max="21:00" required>
                     <small id="ayudaHora" style="color:#8B4513;">Horario de atención: 10:00 am - 9:00 pm</small>
+                    @Html.ValidationMessage(
+                        "hora",
+                        "",
+                        new
+                        {
+                            style = "color: #b00020; display: block; margin-top: 4px;"
+                        }
+                    )
                 </div>
 
                 <div class="form-group">

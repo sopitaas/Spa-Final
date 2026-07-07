@@ -56,13 +56,71 @@ namespace Spa.Controllers
         // ── POST: /Cliente/Registro ──────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Registro(string dni, string nombre, string apellido,
-                                      string correo, string password)
+        public IActionResult Registro(
+            string dni,
+            string nombre,
+            string apellido,
+            string correo,
+            string password)
         {
-            // Validar que el correo no esté ya registrado
+            // Limpiar espacios innecesarios
+            dni = (dni ?? string.Empty).Trim();
+            nombre = (nombre ?? string.Empty).Trim();
+            apellido = (apellido ?? string.Empty).Trim();
+            correo = (correo ?? string.Empty).Trim().ToLowerInvariant();
+            password ??= string.Empty;
+
+            // Conservar los datos escritos si aparece un error
+            ViewBag.Dni = dni;
+            ViewBag.Nombre = nombre;
+            ViewBag.Apellido = apellido;
+            ViewBag.Correo = correo;
+
+            // Validar DNI
+            if (dni.Length != 8 || !dni.All(char.IsDigit))
+            {
+                ViewBag.ErrorDni =
+                    "El DNI debe contener exactamente 8 números.";
+
+                return View();
+            }
+
+            // Validar campos obligatorios
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                string.IsNullOrWhiteSpace(apellido) ||
+                string.IsNullOrWhiteSpace(correo) ||
+                string.IsNullOrWhiteSpace(password))
+            {
+                ViewBag.Error =
+                    "Todos los campos son obligatorios.";
+
+                return View();
+            }
+
+            // Validar longitud de contraseña
+            if (password.Length < 6)
+            {
+                ViewBag.ErrorPassword =
+                    "La contraseña debe tener como mínimo 6 caracteres.";
+
+                return View();
+            }
+
+            // Evitar un DNI duplicado
+            if (_context.Clientes.Any(c => c.Dni == dni))
+            {
+                ViewBag.ErrorDni =
+                    "Ya existe una cuenta registrada con este DNI.";
+
+                return View();
+            }
+
+            // Evitar un correo duplicado
             if (_context.Clientes.Any(c => c.Correo == correo))
             {
-                ViewBag.Error = "Ya existe una cuenta con ese correo.";
+                ViewBag.ErrorCorreo =
+                    "Ya existe una cuenta registrada con este correo.";
+
                 return View();
             }
 
@@ -71,7 +129,7 @@ namespace Spa.Controllers
                 Dni = dni,
                 Nombre = nombre,
                 Apellido = apellido,
-                TipoCliente = "VIP",   // registrado = VIP → descuento automático
+                TipoCliente = "VIP",
                 Correo = correo,
                 Password = password
             };
@@ -79,10 +137,16 @@ namespace Spa.Controllers
             _context.Clientes.Add(nuevoCliente);
             _context.SaveChanges();
 
-            // Login automático tras registrarse
+            // Inicio de sesión automático después del registro
             HttpContext.Session.SetInt32("ClienteId", nuevoCliente.Id);
-            HttpContext.Session.SetString("ClienteNombre", nuevoCliente.Nombre);
-            HttpContext.Session.SetString("ClienteTipo", nuevoCliente.TipoCliente);
+            HttpContext.Session.SetString(
+                "ClienteNombre",
+                nuevoCliente.Nombre
+            );
+            HttpContext.Session.SetString(
+                "ClienteTipo",
+                nuevoCliente.TipoCliente
+            );
 
             return RedirectToAction("Index", "Home");
         }

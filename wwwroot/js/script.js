@@ -76,6 +76,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const precioFinal = document.getElementById("precioFinal");
     const inputFecha = document.getElementById("fecha");
     const inputHora = document.getElementById("hora");
+    const inputDni = document.getElementById("dni");
+    const errorDni = document.getElementById("errorDni");
+
+    // ---- Validación del DNI en tiempo real ----
+    if (inputDni) {
+        inputDni.addEventListener("input", () => {
+            // Elimina cualquier carácter que no sea un número
+            inputDni.value = inputDni.value
+                .replace(/\D/g, "")
+                .slice(0, 8);
+
+            if (inputDni.value.length === 0) {
+                errorDni.textContent = "";
+                inputDni.setCustomValidity("");
+            } else if (inputDni.value.length !== 8) {
+                const mensaje = "El DNI debe contener exactamente 8 números.";
+                errorDni.textContent = mensaje;
+                inputDni.setCustomValidity(mensaje);
+            } else {
+                errorDni.textContent = "";
+                inputDni.setCustomValidity("");
+            }
+        });
+    }
 
     // ---- Horario laboral permitido ----
     const HORA_APERTURA = "10:00";
