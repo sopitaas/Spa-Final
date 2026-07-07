@@ -95,11 +95,23 @@ nav {
     max-width: 100%;
 }
 
-/* ── Formulario de registro (Crear cuenta) ───────────── */
+/* Formulario de registro */
 .registro-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+    width: 100%;
+}
+
+.registro-grid .admin-form-group {
+    min-width: 0;
+    width: 100%;
+}
+
+.registro-grid input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* ── Footer ─────────────────────────────────────────── */
@@ -229,8 +241,11 @@ nav {
     }
 
     /* Registro grid nombre/apellido */
+    /* En pantallas pequeñas, nombre y apellido van uno debajo del otro */
+    @media (max-width: 700px) {
     .registro-grid {
         grid-template-columns: 1fr;
+    }
     }
 
     /* Testimonios */

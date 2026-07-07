@@ -11,6 +11,23 @@
 
         <div class="cita-formulario">
             <h2>SEPARA TU CITA</h2>
+            @if (TempData["MensajeExito"] != null)
+            {
+                <div style="
+                    background-color: #e8f5e9;
+                    color: #1b5e20;
+                    border: 1px solid #81c784;
+                    padding: 12px;
+                    margin-bottom: 18px;
+                    border-radius: 8px;
+                    text-align: center;
+                    font-weight: bold;"
+                    role="alert">
+
+                    @TempData["MensajeExito"]
+                </div>
+            }
+
 
             <form asp-action="Crear"
                   method="post"
@@ -19,7 +36,27 @@
                 <!-- Campo DNI solo en su propia fila -->
                 <div class="form-group">
                     <label for="dni">DNI</label>
-                    <input type="text" id="dni" name="dni" maxlength="8" pattern="\d{8}" required>
+
+                    <input type="text"
+                    id="dni"
+                    name="dni"
+                    maxlength="8"
+                    minlength="8"
+                    inputmode="numeric"
+                    pattern="[0-9]{8}"
+                    title="El DNI debe contener exactamente 8 números."
+                    autocomplete="off"
+                    required>
+
+                    <small id="errorDni"
+                    style="color: #b00020; display: block; margin-top: 4px;">
+                    </small>
+
+                    @Html.ValidationMessage(
+                    "dni",
+                    "",
+                    new { style = "color: #b00020; display: block; margin-top: 4px;" }
+                    )
                 </div>
 
                 <!-- Nombre y Apellido en una misma fila -->
@@ -38,30 +75,92 @@
                 <div class="form-group">
                     <label for="fecha">Fecha</label>
                     <input type="date" id="fecha" name="fecha" required>
+                    @Html.ValidationMessage(
+                        "fecha",
+                        "",
+                        new
+                        {
+                            style = "color: #b00020; display: block; margin-top: 4px;"
+                        }
+                    )
                 </div>
 
                 <div class="form-group">
                     <label for="hora">Hora</label>
                     <input type="time" id="hora" name="hora" min="10:00" max="21:00" required>
                     <small id="ayudaHora" style="color:#8B4513;">Horario de atención: 10:00 am - 9:00 pm</small>
+                    @Html.ValidationMessage(
+                        "hora",
+                        "",
+                        new
+                        {
+                            style = "color: #b00020; display: block; margin-top: 4px;"
+                        }
+                    )
                 </div>
 
                 <div class="form-group">
                     <label for="servicio">Servicio</label>
                     <select id="servicio" name="servicio" required>
-                        <option value="">Tipo Servicio</option>
-                        <option value="masaje-relajante">Masaje Relajante</option>
-                        <option value="masaje-piedras-calientes">Masaje de piedras calientes</option>
-                        <option value="masaje-descontracturante">Masaje descontracturante</option>
-                        <option value="facial-express">Facial express</option>
-                        <option value="facial-profundo">Facial profundo</option>
-                        <option value="facial-rejuvenecedor">Facial rejuvenecedor</option>
-                        <option value="camara-vapor">Cámara a vapor</option>
-                        <option value="camara-seca">Cámara seca</option>
-                        <option value="tina-hidromasaje">Tina de hidromasajes</option>
-                        <option value="promo-mes">Promoción del mes</option>
-                        <option value="promo-cumple">Promoción de cumpleaños</option>
-                        <option value="promo-ritual-relax">Promoción ritual clásico</option>
+                        
+
+                            <option value="">Tipo Servicio</option>
+
+                            <option value="masaje-relajante"
+                                    selected="@(ViewBag.ServicioSeleccionado == "masaje-relajante")">
+                                Masaje Relajante
+                            </option>
+
+                            <option value="masaje-piedras-calientes"
+                                    selected="@(ViewBag.ServicioSeleccionado == "masaje-piedras-calientes")">
+                                Masaje de piedras calientes
+                            </option>
+
+                            <option value="masaje-descontracturante"
+                                    selected="@(ViewBag.ServicioSeleccionado == "masaje-descontracturante")">
+                                Masaje descontracturante
+                            </option>
+
+                            <option value="facial-express"
+                                    selected="@(ViewBag.ServicioSeleccionado == "facial-express")">
+                                Facial express
+                            </option>
+
+                            <option value="facial-profundo"
+                                    selected="@(ViewBag.ServicioSeleccionado == "facial-profundo")">
+                                Facial profundo
+                            </option>
+
+                            <option value="facial-rejuvenecedor"
+                                    selected="@(ViewBag.ServicioSeleccionado == "facial-rejuvenecedor")">
+                                Facial rejuvenecedor
+                            </option>
+
+                            <option value="camara-vapor"
+                                    selected="@(ViewBag.ServicioSeleccionado == "camara-vapor")">
+                                Cámara a vapor
+                            </option>
+
+                            <option value="camara-seca"
+                                    selected="@(ViewBag.ServicioSeleccionado == "camara-seca")">
+                                Cámara seca
+                            </option>
+
+                            <option value="tina-hidromasaje"
+                                    selected="@(ViewBag.ServicioSeleccionado == "tina-hidromasaje")">
+                                Tina de hidromasajes
+                            </option>
+                            
+                            @if (ViewBag.Promociones != null)
+                            {
+                                foreach (var promo in ViewBag.Promociones)
+                                {
+                                    <option value="promo-db-@promo.Id" data-precio="@promo.Precio">
+                                        @promo.Nombre
+                                    </option>
+                                }
+                            }
+                            
                     </select>
                 </div>
                 <div class="form-group">
@@ -72,22 +171,29 @@
                 </div>
                 @Html.AntiForgeryToken()
                 <!-- Después de la selección de duración -->
-                <div id="campoPersonas" style="display:none;">
+                <div id="campoPersonas" class="form-group campo-personas" style="display:none;">
                     <label for="personas">¿Cuántas personas?</label>
-                    <input type="number" id="personas" name="cantidadPersonas" min="1" value="1" />
+
+                    <input type="number"
+                           id="personas"
+                           name="cantidadPersonas"
+                           min="1"
+                           max="20"
+                           value="1" />
+
+                    <small>Máximo 20 personas</small>
                 </div>
 
                 <p id="precioFinal" style="font-weight: bold; margin-top: 10px;"></p>
                 <input type="hidden" id="precioInput" name="Precio" value="0" />
 
-
                 <button type="submit" class="btn-agendar">Agendar</button>
+                <div class="decoracion-floral">
+                    <!-- Decoración floral se agregará con CSS -->
+                </div>
             </form>
         </div>
 
-        <div class="decoracion-floral">
-            <!-- Decoración floral se agregará con CSS -->
-        </div>
     </div>
 </section>
 <!-- Modal de confirmación de cita -->

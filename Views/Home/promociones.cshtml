@@ -5,56 +5,55 @@
 <section class="promo">
     <h2 class="titulo">PROMOCIONES</h2>
     <div class="promociones-container">
-        <!-- Cumpleaños Manos de Paz -->
-        <div class="promocion-card">
-            <div class="promocion-header">
-                ¡CELEBRA DIFERENTE, CELEBRA EN MANOS DE PAZ!
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var promo in Model)
+            {
+                <div class="promocion-card">
+
+                    <div class="promocion-header">
+                        @promo.Nombre
+                    </div>
+
+                    <div class="promocion-content">
+
+                        <img src="~/images/@promo.Imagen"
+                             alt="@promo.Nombre"
+                             class="promocion-image" />
+
+                        @if (!string.IsNullOrWhiteSpace(promo.Descripcion))
+                        {
+                            <div class="promocion-incluye">
+                                Descripción
+                            </div>
+
+                            <p class="promocion-descripcion">
+                                @promo.Descripcion
+                            </p>
+                        }
+
+                        <div class="promocion-precio">
+                            S/ @promo.Precio
+                        </div>
+
+                        <a asp-controller="Cita"
+                           asp-action="Crear"
+                           asp-route-servicio="promo-db-@promo.Id"
+                           class="promocion-button">
+                            ¡QUIERO ESTA PROMOCIÓN!
+                        </a>
+
+                    </div>
+
+                </div>
+            }
+        }
+        else
+        {
+            <div style="grid-column:1/-1;text-align:center;padding:60px;">
+                <h3>No hay promociones disponibles.</h3>
             </div>
-            <div class="promocion-content">
-                <img src="/images/promo1.png" alt="Cumpleaños Manos de Paz" class="promocion-image">
-
-                <h3 class="promocion-title">Cumpleaños Manos de Paz</h3>
-
-                <div class="promocion-incluye">Incluye:</div>
-                <ul class="promocion-lista">
-                    <li>Cámara seca o vapor (30 min)</li>
-                    <li>Tina de hidromasajes (30 min)</li>
-                    <li>Exfoliante corporal o cultura corporal</li>
-                    <li>Masaje descontracturante o relajante (30 min)</li>
-                    <li>Brownie de chocolate</li>
-                    <li>Copa de vino</li>
-                    <li>Tarjeta de cumpleaños personalizada</li>
-                </ul>
-
-                <div class="promocion-precio">S/ 260 por persona</div>
-                <a asp-controller="Cita" asp-action="Index" asp-route-servicio="promo-cumple" class="promocion-button">¡QUIERO ESTA PROMOCIÓN!</a>
-            </div>
-        </div>
-
-        <!-- Ritual Clásico Full Relax -->
-        <div class="promocion-card ritual-card">
-            <div class="ritual-background"></div>
-            <div class="ritual-header">
-                EL EQUILIBRIO PERFECTO ENTRE CUERPO, MENTE Y ALMA
-            </div>
-            <div class="promocion-content ritual-content">
-                <img src="/images/promo2.png" alt="Ritual clásico full relax" class="promocion-image">
-
-                <h3 class="promocion-title">Ritual clásico full relax</h3>
-
-                <div class="promocion-incluye">Incluye:</div>
-                <ul class="promocion-lista">
-                    <li>Masaje relajante + descontracturante (60 min)</li>
-                    <li>Jacuzzi con hidromasajes (con sal marina o burbujas)</li>
-                    <li>Sauna privado con luz infrarroja (30 min)</li>
-                    <li>Cortesía: copa de vino, agua y bocaditos</li>
-                    <li>En celebraciones especiales: porción de pastel</li>
-                </ul>
-                <div class="promocion-precio">S/ 320 por persona</div>
-
-                <a asp-controller="Cita" asp-action="Index" asp-route-servicio="promo-ritual-relax" class="promocion-button">¡QUIERO ESTA PROMOCIÓN!</a>
-            </div>
-        </div>
+        }
     </div>
 
 </section>

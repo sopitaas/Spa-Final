@@ -30,6 +30,10 @@ namespace Spa.Controllers
         [HttpGet]
         public IActionResult Crear()
         {
+            ViewBag.Promociones = _context.Promociones
+                .Where(p => p.Activa)
+                .ToList();
+
             return View("~/Views/Home/cita.cshtml");
         }
 
@@ -97,25 +101,113 @@ namespace Spa.Controllers
             string hora,
             int cantidadPersonas = 1)
         {
+            if (string.IsNullOrWhiteSpace(dni) ||
+                dni.Length != 8 ||
+                !dni.All(char.IsDigit))
+            {
+                ModelState.AddModelError(
+                    "dni",
+                    "El DNI debe contener exactamente 8 números."
+                );
+
+                return View("~/Views/Home/cita.cshtml");
+            }
             if (string.IsNullOrWhiteSpace(servicio))
             {
                 ModelState.AddModelError("servicio", "Debe seleccionar un servicio.");
                 return View("~/Views/Home/cita.cshtml");
             }
 
-            // Combinar fecha + hora del formulario en un solo DateTime
+            // Combinar la fecha y la hora del formulario
             if (!DateTime.TryParse($"{fecha} {hora}", out var fechaHora))
             {
-                ModelState.AddModelError("fecha", "Fecha u hora inválida.");
+                ModelState.AddModelError(
+                    "fecha",
+                    "Debe seleccionar una fecha válida."
+                );
+
+                ModelState.AddModelError(
+                    "hora",
+                    "Debe seleccionar una hora válida."
+                );
+
+                return View("~/Views/Home/cita.cshtml");
+            }
+
+            // No permitir citas en fechas u horas pasadas
+            if (fechaHora < DateTime.Now)
+            {
+                ModelState.AddModelError(
+                    "fecha",
+                    "La fecha y la hora de la cita no pueden estar en el pasado."
+                );
+
+                return View("~/Views/Home/cita.cshtml");
+            }
+
+            // Horario de atención del spa
+            var horaApertura = new TimeSpan(10, 0, 0);
+            var horaCierre = new TimeSpan(21, 0, 0);
+
+            if (fechaHora.TimeOfDay < horaApertura ||
+                fechaHora.TimeOfDay > horaCierre)
+            {
+                ModelState.AddModelError(
+                    "hora",
+                    "El horario de atención es de 10:00 a. m. a 9:00 p. m."
+                );
+
                 return View("~/Views/Home/cita.cshtml");
             }
 
             Servicio? servicioSeleccionado;
             decimal? precioPromocion = null;
 
-            if (Promociones.TryGetValue(servicio, out var promo))
+            if (servicio.StartsWith("promo-db-"))
             {
-                // Promoción: usamos el slug base directamente para buscar en BD
+                var idTexto = servicio.Replace("promo-db-", "");
+
+                if (int.TryParse(idTexto, out int promoId))
+                {
+                    var promocion = _context.Promociones
+                        .FirstOrDefault(p => p.Id == promoId && p.Activa);
+
+                    if (promocion != null)
+                    {
+                        servicioSeleccionado = _context.Servicios
+                            .FirstOrDefault(s => s.Nombre == promocion.Nombre);
+
+                        if (servicioSeleccionado == null)
+                        {
+                            servicioSeleccionado = new Servicio
+                            {
+                                Nombre = promocion.Nombre,
+                                PrecioBase = promocion.Precio,
+                                Duracion = "90 min"
+                            };
+
+                            _context.Servicios.Add(servicioSeleccionado);
+                            _context.SaveChanges();
+                        }
+
+                        precioPromocion = promocion.Precio;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("servicio", "La promoción seleccionada no está disponible.");
+                        return View("~/Views/Home/cita.cshtml");
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("servicio", "Promoción inválida.");
+                    return View("~/Views/Home/cita.cshtml");
+                }
+            }
+
+
+            else if (Promociones.TryGetValue(servicio, out var promo))
+            {
                 servicioSeleccionado = BuscarServicioEnBd(promo.SlugBase, "60 min");
                 precioPromocion = promo.Precio;
             }
@@ -127,6 +219,24 @@ namespace Spa.Controllers
             if (servicioSeleccionado == null)
             {
                 ModelState.AddModelError("servicio", "El servicio seleccionado no está disponible.");
+                return View("~/Views/Home/cita.cshtml");
+            }
+
+            // Comprobar que el mismo servicio no esté reservado
+            // en la fecha y hora seleccionadas
+            bool existeCitaDuplicada = _context.Citas.Any(c =>
+                c.FechaHora == fechaHora &&
+                c.ServicioId == servicioSeleccionado.Id &&
+                c.Confirmada
+            );
+
+            if (existeCitaDuplicada)
+            {
+                ModelState.AddModelError(
+                    "hora",
+                    "Ya existe una cita para este servicio en la fecha y hora seleccionadas. Elige otro horario."
+                );
+
                 return View("~/Views/Home/cita.cshtml");
             }
 
@@ -185,9 +295,17 @@ namespace Spa.Controllers
                 : new SinDescuento();
 
             // RF1, RF2 y RF3 ejecutados aquí de forma limpia
-            Cita citaProcesada = _citaService.AgendarCita(cliente, servicioSeleccionado, fechaHora, cantidadPersonas, estrategia);
+            _citaService.AgendarCita(
+            cliente,
+            servicioSeleccionado,
+            fechaHora,
+            cantidadPersonas,
+            estrategia
+        );
 
-            return View("~/Views/Home/bienvenida.cshtml", citaProcesada);
+        TempData["MensajeExito"] = "¡Cita registrada con éxito!";
+
+        return RedirectToAction("Crear", "Cita");
         }
     }
 }

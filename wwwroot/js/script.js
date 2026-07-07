@@ -76,6 +76,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const precioFinal = document.getElementById("precioFinal");
     const inputFecha = document.getElementById("fecha");
     const inputHora = document.getElementById("hora");
+    const inputDni = document.getElementById("dni");
+    const errorDni = document.getElementById("errorDni");
+
+    // ---- Validación del DNI en tiempo real ----
+    if (inputDni) {
+        inputDni.addEventListener("input", () => {
+            // Elimina cualquier carácter que no sea un número
+            inputDni.value = inputDni.value
+                .replace(/\D/g, "")
+                .slice(0, 8);
+
+            if (inputDni.value.length === 0) {
+                errorDni.textContent = "";
+                inputDni.setCustomValidity("");
+            } else if (inputDni.value.length !== 8) {
+                const mensaje = "El DNI debe contener exactamente 8 números.";
+                errorDni.textContent = mensaje;
+                inputDni.setCustomValidity(mensaje);
+            } else {
+                errorDni.textContent = "";
+                inputDni.setCustomValidity("");
+            }
+        });
+    }
 
     // ---- Horario laboral permitido ----
     const HORA_APERTURA = "10:00";
@@ -93,40 +117,85 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const duracionesPorServicio = {
-        "masaje-relajante": ["60 min"],
-        "masaje-piedras-calientes": ["60 min"],
-        "masaje-descontracturante": ["60 min"],
-        "facial-express": ["30 min - Individual"],
-        "facial-profundo": ["45 min - Individual"],
-        "facial-rejuvenecedor": ["60 min - Individual"],
-        "camara-vapor": ["30 min"],
-        "camara-seca": ["30 min"],
-        "tina-hidromasaje": ["30 min"],
+        "masaje-relajante": ["30 min", "60 min"],
+        "masaje-piedras-calientes": ["30 min", "60 min"],
+        "masaje-descontracturante": ["30 min", "60 min"],
+
+        "facial-express": ["Individual", "Para dos"],
+        "facial-profundo": ["Individual", "Para dos"],
+        "facial-rejuvenecedor": ["Individual", "Para dos"],
+
+        "camara-vapor": ["30 min", "60 min"],
+        "camara-seca": ["30 min", "60 min"],
+        "tina-hidromasaje": ["30 min", "60 min"],
+
         "promo-mes": ["-"],
         "promo-cumple": ["-"],
         "promo-ritual-relax": ["-"]
     };
 
     const preciosPorServicio = {
-        "masaje-relajante": { "60 min": 80 },
-        "masaje-piedras-calientes": { "60 min": 110 },
-        "masaje-descontracturante": { "60 min": 100 },
-        "facial-express": { "30 min - Individual": 70 },
-        "facial-profundo": { "45 min - Individual": 90 },
-        "facial-rejuvenecedor": { "60 min - Individual": 120 },
-        "camara-vapor": { "30 min": 60 },
-        "camara-seca": { "30 min": 60 },
-        "tina-hidromasaje": { "30 min": 120 },
+        "masaje-relajante": {
+            "30 min": 50,
+            "60 min": 90
+        },
+        "masaje-piedras-calientes": {
+            "30 min": 65,
+            "60 min": 95
+        },
+        "masaje-descontracturante": {
+            "30 min": 60,
+            "60 min": 80
+        },
+
+        "facial-express": {
+            "Individual": 89,
+            "Para dos": 158
+        },
+        "facial-profundo": {
+            "Individual": 90,
+            "Para dos": 160
+        },
+        "facial-rejuvenecedor": {
+            "Individual": 190,
+            "Para dos": 360
+        },
+
+        "camara-vapor": {
+            "30 min": 70,
+            "60 min": 130
+        },
+        "camara-seca": {
+            "30 min": 70,
+            "60 min": 130
+        },
+        "tina-hidromasaje": {
+            "30 min": 80,
+            "60 min": 150
+        },
+
         "promo-mes": 160,
         "promo-cumple": 260,
         "promo-ritual-relax": 320
     };
+   
 
     function actualizarUIPrecioYPersonas() {
         const servicio = selectServicio.value;
         const duracion = selectDuracion.value;
         const personas = parseInt(inputPersonas.value) || 1;
         let total = 0;
+        if (servicio.startsWith("promo-db-")) {
+            campoPersonas.style.display = "block";
+
+            const opcionSeleccionada = selectServicio.options[selectServicio.selectedIndex];
+            const precioPromo = parseFloat(opcionSeleccionada.dataset.precio) || 0;
+
+            total = precioPromo * personas;
+
+            precioFinal.textContent = `Precio total: S/ ${total.toFixed(2)}`;
+            return;
+        }
 
         if (servicio === "promo-cumple" || servicio === "promo-ritual-relax") {
             campoPersonas.style.display = "block";
@@ -155,14 +224,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function actualizarDuraciones() {
         const servicio = selectServicio.value;
-        const duraciones = duracionesPorServicio[servicio] || [];
+
         selectDuracion.innerHTML = "";
+
+        if (servicio.startsWith("promo-db-")) {
+            const option = document.createElement("option");
+            option.value = "90 min";
+            option.textContent = "90 min";
+            option.selected = true;
+
+            selectDuracion.appendChild(option);
+
+            actualizarUIPrecioYPersonas();
+            return;
+        }
+
+        const duraciones = duracionesPorServicio[servicio] || [];
+
         duraciones.forEach((dur) => {
             const option = document.createElement("option");
             option.value = dur;
             option.textContent = dur;
             selectDuracion.appendChild(option);
         });
+
         actualizarUIPrecioYPersonas();
     }
 
@@ -175,7 +260,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (inputPersonas) {
-        inputPersonas.addEventListener("input", actualizarUIPrecioYPersonas);
+        inputPersonas.addEventListener("input", () => {
+            const valor = inputPersonas.value;
+
+            if (valor === "") {
+                actualizarUIPrecioYPersonas();
+                return;
+            }
+
+            if (parseInt(valor) > 20) {
+                inputPersonas.value = 20;
+            }
+
+            actualizarUIPrecioYPersonas();
+        });
+
+        inputPersonas.addEventListener("blur", () => {
+            if (inputPersonas.value === "" || parseInt(inputPersonas.value) < 1) {
+                inputPersonas.value = 1;
+            }
+
+            actualizarUIPrecioYPersonas();
+        });
     }
 
     // ---- Validación de fecha en tiempo real ----

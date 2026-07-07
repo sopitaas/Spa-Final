@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Spa.Data;
 using Spa.Models;
 using System.Diagnostics;
 
@@ -6,6 +7,12 @@ namespace Spa.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly SpaDbContext _context;
+
+        public HomeController(SpaDbContext context)
+        {
+            _context = context;
+        }
         // Redirige a Views/Home/index.cshtml
         public IActionResult Index()
         {
